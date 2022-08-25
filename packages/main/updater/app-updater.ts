@@ -22,12 +22,13 @@ export class AppUpdater {
 
   async run() {
     // set the current version of the app
+    logger.info('appUpdater -> Start app update checking...')
     const currentVersion = app.getVersion()
     this._rootStore.appStore.setLindoVersion(currentVersion)
 
     autoUpdater.logger = logger
     autoUpdater.autoDownload = false
-    autoUpdater.setFeedURL({ provider: 'github', owner: 'prixe', repo: 'lindo' })
+    autoUpdater.setFeedURL({ provider: 'github', owner: 'zenoxs', repo: 'lindo-poc-update' })
 
     autoUpdater.on('checking-for-update', () => {
       logger.info('appUpdater -> Checking for updates...')
@@ -55,7 +56,9 @@ export class AppUpdater {
       if (error) logger.info('appUpdater -> An error occured: ' + error)
     })
 
-    autoUpdater.checkForUpdatesAndNotify()
+    return autoUpdater.checkForUpdatesAndNotify().then((res) => {
+      console.log(res)
+    })
   }
 
   private _showUpdateDialog(newVersion: string, required: boolean): Promise<void> {
