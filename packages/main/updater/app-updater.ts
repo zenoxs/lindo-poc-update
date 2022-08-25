@@ -16,7 +16,7 @@ export class AppUpdater {
   }
 
   static async init(rootStore: RootStore, i18n: I18n): Promise<AppUpdater> {
-    const updaterWindow = await UpdaterWindow.init(rootStore)
+    const updaterWindow = await UpdaterWindow.init(rootStore, { show: false })
     return new AppUpdater(updaterWindow, rootStore, i18n)
   }
 
@@ -34,9 +34,14 @@ export class AppUpdater {
       logger.info('appUpdater -> Checking for updates...')
     })
 
-    autoUpdater.on('update-available', ({ version }: UpdateInfo) => {
+    autoUpdater.on('update-available', ({ version, releaseNotes }: UpdateInfo) => {
+      console.log(releaseNotes)
       logger.info('appUpdater -> An Update is available v' + version)
-      this._showUpdateDialog(version, true)
+      let required = false
+      if (typeof releaseNotes === 'string') {
+        required = releaseNotes.includes('__update:required__') ?? false
+      }
+      this._showUpdateDialog(version, required)
     })
 
     autoUpdater.on('update-not-available', () => {
@@ -44,11 +49,13 @@ export class AppUpdater {
     })
 
     autoUpdater.on('download-progress', ({ percent }) => {
+      this._updaterWindow.show()
       this._updaterWindow.sendProgress({ message: 'DOWNLOADING UPDATE', percent })
     })
 
     autoUpdater.on('update-downloaded', () => {
       logger.info('appUpdater -> Update downloaded, will install now')
+      this._updaterWindow.close()
       autoUpdater.quitAndInstall()
     })
 
@@ -56,8 +63,8 @@ export class AppUpdater {
       if (error) logger.info('appUpdater -> An error occured: ' + error)
     })
 
-    return autoUpdater.checkForUpdatesAndNotify().then((res) => {
-      console.log(res)
+    return autoUpdater.checkForUpdatesAndNotify().then(() => {
+      logger.info('appUpdater -> Update check done')
     })
   }
 
@@ -76,25 +83,21 @@ export class AppUpdater {
         buttons
       })
       .then((returnValue) => {
+        console.log(returnValue)
         if (returnValue.response === 0) {
-          if (process.platform === 'win32') {
-            this._handleWindows()
-          } else {
-            this._handleOther()
-          }
+          return autoUpdater.downloadUpdate().catch((err) => {
+            logger.error('appUpdater -> unable to download automatically the release', err)
+            return this._downloadFromWeb()
+          })
         } else {
           logger.info('appUpdater -> App update ignored.')
         }
       })
   }
 
-  private _handleWindows() {
-    autoUpdater.downloadUpdate()
-  }
-
-  private _handleOther() {
+  private async _downloadFromWeb() {
     logger.info('appUpdater -> Redirected to app download page.')
-    shell.openExternal('https://github.com/prixe/lindo/releases/latest')
+    await shell.openExternal('https://github.com/prixe/lindo/releases/latest')
     app.exit()
   }
 }
