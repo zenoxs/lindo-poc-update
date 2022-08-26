@@ -4,6 +4,7 @@ import { logger } from '../logger'
 import { I18n } from '../utils'
 import { autoUpdater, UpdateInfo } from 'electron-updater'
 import { UpdaterWindow } from '../windows/updater-window'
+
 export class AppUpdater {
   private readonly _updaterWindow: UpdaterWindow
   private readonly _rootStore: RootStore
@@ -30,45 +31,60 @@ export class AppUpdater {
     autoUpdater.autoDownload = false
     autoUpdater.setFeedURL({ provider: 'github', owner: 'zenoxs', repo: 'lindo-poc-update' })
 
-    autoUpdater.on('checking-for-update', () => {
-      logger.info('appUpdater -> Checking for updates...')
-    })
+    return new Promise<void>((resolve, reject) => {
+      autoUpdater.on('checking-for-update', () => {
+        logger.info('appUpdater -> Checking for updates...')
+      })
 
-    autoUpdater.on('update-available', ({ version, releaseNotes }: UpdateInfo) => {
-      console.log(releaseNotes)
-      logger.info('appUpdater -> An Update is available v' + version)
-      let required = false
-      if (typeof releaseNotes === 'string') {
-        required = releaseNotes.includes('__update:required__') ?? false
-      }
-      this._showUpdateDialog(version, required)
-    })
+      autoUpdater.on('update-available', ({ version, releaseNotes }: UpdateInfo) => {
+        console.log(releaseNotes)
+        logger.info('appUpdater -> An Update is available v' + version)
+        let required = false
+        if (typeof releaseNotes === 'string') {
+          required = releaseNotes.includes('__update:required__') ?? false
+        }
+        this._showUpdateDialog(version, required).then((ignored) => {
+          // resolve the promise if the update is ignored
+          if (ignored) {
+            resolve()
+          }
+        })
+      })
 
-    autoUpdater.on('update-not-available', () => {
-      logger.info('appUpdater -> There is no available update')
-    })
+      autoUpdater.on('update-not-available', () => {
+        logger.info('appUpdater -> There is no available update')
+        resolve()
+      })
 
-    autoUpdater.on('download-progress', ({ percent }) => {
-      this._updaterWindow.show()
-      this._updaterWindow.sendProgress({ message: 'DOWNLOADING UPDATE', percent })
-    })
+      autoUpdater.on('download-progress', ({ percent }) => {
+        this._updaterWindow.show()
+        this._updaterWindow.sendProgress({ message: 'DOWNLOADING UPDATE', percent })
+      })
 
-    autoUpdater.on('update-downloaded', () => {
-      logger.info('appUpdater -> Update downloaded, will install now')
-      this._updaterWindow.close()
-      autoUpdater.quitAndInstall()
-    })
+      autoUpdater.on('update-downloaded', () => {
+        logger.info('appUpdater -> Update downloaded, will install now')
+        this._updaterWindow.close()
+        autoUpdater.quitAndInstall()
+      })
 
-    autoUpdater.on('error', (error: Error) => {
-      if (error) logger.info('appUpdater -> An error occured: ' + error)
-    })
+      autoUpdater.on('error', (error: Error) => {
+        if (error) logger.info('appUpdater -> An error occured: ' + error)
+        reject(error)
+      })
 
-    return autoUpdater.checkForUpdatesAndNotify().then(() => {
-      logger.info('appUpdater -> Update check done')
+      autoUpdater.checkForUpdatesAndNotify().then(() => {
+        logger.info('appUpdater -> Update check done')
+      })
     })
   }
 
-  private _showUpdateDialog(newVersion: string, required: boolean): Promise<void> {
+  /**
+   *
+   * @param newVersion
+   * @param required
+   * @returns true if the update is ignored, false otherwise
+   */
+  private _showUpdateDialog(newVersion: string, required: boolean): Promise<boolean> {
     const buttons: Array<string> = [this._i18n.LL.main.updater.download()]
     if (!required) {
       buttons.push(this._i18n.LL.main.updater.ignore())
@@ -85,9 +101,10 @@ export class AppUpdater {
       .then((returnValue) => {
         console.log(returnValue)
         if (returnValue.response === 0) {
-          return autoUpdater.downloadUpdate().catch((err) => {
+          return autoUpdater.downloadUpdate().catch(async (err) => {
             logger.error('appUpdater -> unable to download automatically the release', err)
-            return this._downloadFromWeb()
+            await this._downloadFromWeb()
+            return false
           })
         } else {
           logger.info('appUpdater -> App update ignored.')
