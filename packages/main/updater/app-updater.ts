@@ -108,6 +108,7 @@ export class AppUpdater {
           })
         } else {
           logger.info('appUpdater -> App update ignored.')
+          return true
         }
       })
   }
