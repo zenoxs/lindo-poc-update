@@ -4,6 +4,7 @@ import { logger } from '../logger'
 import { I18n } from '../utils'
 import { autoUpdater, UpdateInfo } from 'electron-updater'
 import { UpdaterWindow } from '../windows/updater-window'
+import { GITHUB_LATEST_RELEASE_URL, GITHUB_OWNER, GITHUB_REPO } from '../constants'
 
 export class AppUpdater {
   private readonly _updaterWindow: UpdaterWindow
@@ -29,7 +30,7 @@ export class AppUpdater {
 
     autoUpdater.logger = logger
     autoUpdater.autoDownload = false
-    autoUpdater.setFeedURL({ provider: 'github', owner: 'zenoxs', repo: 'lindo-poc-update' })
+    autoUpdater.setFeedURL({ provider: 'github', owner: GITHUB_OWNER, repo: GITHUB_REPO })
 
     return new Promise<void>((resolve, reject) => {
       autoUpdater.on('checking-for-update', () => {
@@ -114,7 +115,7 @@ export class AppUpdater {
 
   private async _downloadFromWeb() {
     logger.info('appUpdater -> Redirected to app download page.')
-    await shell.openExternal('https://github.com/prixe/lindo/releases/latest')
+    await shell.openExternal(GITHUB_LATEST_RELEASE_URL)
     app.exit()
   }
 }
