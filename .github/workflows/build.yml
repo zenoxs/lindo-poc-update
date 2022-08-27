@@ -62,6 +62,10 @@ jobs:
             release/${{ steps.extract_version.outputs.version }}/Lindo-${{ steps.extract_version.outputs.version }}.dmg.blockmap
             release/${{ steps.extract_version.outputs.version }}/Lindo-${{ steps.extract_version.outputs.version }}-arm64.dmg
             release/${{ steps.extract_version.outputs.version }}/Lindo-${{ steps.extract_version.outputs.version }}-arm64.dmg.blockmap
+            release/${{ steps.extract_version.outputs.version }}/Lindo-${{ steps.extract_version.outputs.version }}-mac.zip
+            release/${{ steps.extract_version.outputs.version }}/Lindo-${{ steps.extract_version.outputs.version }}-mac.zip.blockmap
+            release/${{ steps.extract_version.outputs.version }}/Lindo-${{ steps.extract_version.outputs.version }}-arm64-mac.zip
+            release/${{ steps.extract_version.outputs.version }}/Lindo-${{ steps.extract_version.outputs.version }}-arm64-mac.zip.blockmap
             release/${{ steps.extract_version.outputs.version }}/latest-mac.yml
 
       - name: Upload Linux artifacts
@@ -122,4 +126,8 @@ jobs:
             macos/Lindo-${{ steps.extract_version.outputs.version }}.dmg.blockmap
             macos/Lindo-${{ steps.extract_version.outputs.version }}-arm64.dmg
             macos/Lindo-${{ steps.extract_version.outputs.version }}-arm64.dmg.blockmap
+            macos/Lindo-${{ steps.extract_version.outputs.version }}-mac.zip
+            macos/Lindo-${{ steps.extract_version.outputs.version }}-mac.zip.blockmap
+            macos/Lindo-${{ steps.extract_version.outputs.version }}-arm64-mac.zip
+            macos/Lindo-${{ steps.extract_version.outputs.version }}-arm64-mac.zip.blockmap
             macos/latest-mac.yml
