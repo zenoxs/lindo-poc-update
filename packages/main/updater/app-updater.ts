@@ -37,14 +37,13 @@ export class AppUpdater {
         logger.info('appUpdater -> Checking for updates...')
       })
 
-      autoUpdater.on('update-available', ({ version, releaseNotes }: UpdateInfo) => {
-        console.log(releaseNotes)
-        logger.info('appUpdater -> An Update is available v' + version)
+      autoUpdater.on('update-available', (updateInfo: UpdateInfo) => {
+        logger.info('appUpdater -> An Update is available v' + updateInfo.version)
         let required = false
-        if (typeof releaseNotes === 'string') {
-          required = releaseNotes.includes('__update:required__') ?? false
+        if (typeof updateInfo.releaseNotes === 'string') {
+          required = updateInfo.releaseNotes.includes('__update:required__') ?? false
         }
-        this._showUpdateDialog(version, required).then((ignored) => {
+        this._showUpdateDialog(updateInfo.version, required).then((ignored) => {
           // resolve the promise if the update is ignored
           if (ignored) {
             resolve()
